@@ -135,7 +135,7 @@ Ako vam je aplikacija korisna, možete podržati autora donacijom od 50 RSD prek
 
 ## 👨‍💻 Autor
 
-**Miloš Ćuković**
+**Miloš Ćuković / chulechux**
 - Website: [mustrabecka.com](https://mustrabecka.com/vibe-coding-story/)
 
 ## 📄 Licenca
