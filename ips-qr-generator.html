@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBS IPS QR Generator</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Generator QR kodova za NBS IPS plaćanja u Srbiji">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="QR Generator">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="./manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%232563eb'%3E%3Cpath d='M3,11H5V13H3V11M11,5H13V9H11V5M9,11H13V15H9V11M15,11H17V13H15V11M19,11H21V13H19V11M5,7H9V11H5V7M3,5H5V7H3V5M7,5H9V7H7V5M5,3H7V5H5V3M11,3H13V5H11V3M5,15H7V17H5V15M3,17H5V19H3V17M7,17H9V19H7V17M15,15H17V17H15V15M17,17H19V19H17V17M19,15H21V17H19V15M19,5H21V7H19V5M17,5H19V7H17V5M15,5H17V7H15V5M13,17H15V19H13V17M19,9H21V11H19V9M15,9H17V11H15V9M11,15H13V17H11V15M9,17H11V19H9V17M11,19H13V21H11V19M13,21H15V23H13V21M9,3H11V5H9V3M3,9H5V11H3V9M7,9H9V11H7V9M5,19H7V21H5V19M3,21H5V23H3V21M7,21H9V23H7V21'/%3E%3C/svg%3E">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" onload="console.log('qrcode-generator library loaded successfully')" onerror="console.error('Failed to load qrcode-generator library')"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">NBS IPS QR Generator</h1>
+            
+            <!-- Tab Navigation -->
+            <div class="flex mb-6 border-b">
+                <button id="tab-generator" class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600 transition-colors">
+                    Generator
+                </button>
+                <button id="tab-settings" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                    Podešavanja
+                </button>
+                <button id="tab-donate" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                    Donirajte
+                </button>
+                <button id="tab-help" class="px-4 py-2 font-medium text-gray-500 hover:text-blue-600 transition-colors">
+                    Kako ovo radi?
+                </button>
+            </div>
+
+            <!-- Generator Tab -->
+            <div id="generator-tab" class="tab-content">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Payment Form -->
+                    <div>
+                        <h2 class="text-xl font-semibold mb-4 text-gray-700">Podaci za plaćanje</h2>
+                        <form id="payment-form" class="space-y-4">
+                            <div>
+                                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Iznos (RSD) *
+                                </label>
+                                <input type="number" id="amount" name="amount" step="0.01" min="0" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="0.00" required>
+                            </div>
+                            
+                            <div>
+                                <label for="purpose" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Svrha plaćanja *
+                                </label>
+                                <input type="text" id="purpose" name="purpose" maxlength="70"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="Unesite svrhu plaćanja" required>
+                            </div>
+                            
+                            
+                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium">
+                                Generiši QR kod
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- QR Code Display -->
+                    <div>
+                        <h2 class="text-xl font-semibold mb-4 text-gray-700">QR kod</h2>
+                        <div id="qr-container" class="bg-gray-100 rounded-lg p-4 text-center min-h-[300px] flex items-center justify-center">
+                            <p class="text-gray-500">Unesite podatke za plaćanje da biste generisali QR kod</p>
+                        </div>
+                        
+                        <div id="qr-actions" class="mt-4 space-y-2 hidden">
+                            <button id="download-btn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors font-medium">
+                                Preuzmi QR kod
+                            </button>
+                            <button id="share-btn" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors font-medium">
+                                Podeli QR kod
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-content hidden">
+                <div class="max-w-2xl mx-auto">
+                    <h2 class="text-xl font-semibold mb-6 text-gray-700">Podešavanja primaoca plaćanja</h2>
+                    <form id="settings-form" class="space-y-4">
+                        <div>
+                            <label for="recipient-name" class="block text-sm font-medium text-gray-700 mb-1">
+                                Ime i prezime primaoca *
+                            </label>
+                            <input type="text" id="recipient-name" name="recipient-name" maxlength="70"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Unesite ime i prezime" required>
+                        </div>
+                        
+                        <div>
+                            <label for="recipient-account" class="block text-sm font-medium text-gray-700 mb-1">
+                                Broj računa primaoca *
+                            </label>
+                            <input type="text" id="recipient-account" name="recipient-account" maxlength="18"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="000-0000000000000-00" required>
+                        </div>
+                        
+                        <div>
+                            <label for="payment-code" class="block text-sm font-medium text-gray-700 mb-1">
+                                Šifra plaćanja *
+                            </label>
+                            <input type="text" id="payment-code" name="payment-code" maxlength="3" value="289"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="289" required>
+                            <p class="text-xs text-gray-500 mt-1">Unesite šifru plaćanja (289 za bezgotovinska plaćanja)</p>
+                        </div>
+                        
+                        <div>
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-1">
+                                Adresa primaoca
+                            </label>
+                            <input type="text" id="address" name="address" maxlength="70"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Unesite adresu">
+                        </div>
+                        
+                        <div>
+                            <label for="city" class="block text-sm font-medium text-gray-700 mb-1">
+                                Mesto
+                            </label>
+                            <input type="text" id="city" name="city" maxlength="35"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Unesite mesto">
+                        </div>
+                        
+                        <div class="flex space-x-4">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium">
+                                Sačuvaj podešavanja
+                            </button>
+                            <button type="button" id="clear-settings" class="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors font-medium">
+                                Obriši podešavanja
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Donate Tab -->
+            <div id="donate-tab" class="tab-content hidden">
+                <div class="max-w-2xl mx-auto text-center">
+                    <h2 class="text-xl font-semibold mb-6 text-gray-700">Podrška autoru</h2>
+                    <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                        Ukoliko vam je ovaj mali program pomogao, budite slobodni i donirajte 50 RSD autoru kao znak podrške. Hvala u napred, Miloš Ćuković!
+                    </p>
+                    
+                    <!-- Donation QR Code -->
+                    <div id="donation-qr" class="bg-gray-100 rounded-lg p-6 inline-block">
+                        <div class="text-sm text-gray-500 mb-2">QR kod se generiše...</div>
+                    </div>
+                    
+                    <div class="mt-6 text-sm text-gray-500 space-y-1">
+                        <p><strong>Iznos:</strong> 50 RSD</p>
+                        <p><strong>Primalac:</strong> Miloš Ćuković</p>
+                        <p><strong>Šifra plaćanja:</strong> 289</p>
+                        <p><strong>Svrha:</strong> Donacija</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Tab -->
+            <div id="help-tab" class="tab-content hidden">
+                <div class="max-w-4xl mx-auto">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-700">Kako ovo radi?</h2>
+                    
+                    <div class="space-y-6 text-gray-600">
+                        <!-- Privacy Section -->
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div class="flex items-center mb-2">
+                                <span class="text-green-600 text-lg mr-2">🔒</span>
+                                <h3 class="text-lg font-semibold text-green-800">Privatnost i sigurnost</h3>
+                            </div>
+                            <p class="text-green-700">
+                                <strong>Svi vaši podaci se čuvaju isključivo na vašem uređaju.</strong> 
+                                Aplikacija ne šalje nikakve informacije na internet, ne koristi spoljnje servere za čuvanje podataka, 
+                                i ne prikuplja nikakve lične informacije. Vaši podaci o primaocima plaćanja ostaju potpuno privatni.
+                            </p>
+                        </div>
+
+                        <!-- How it works -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-3 text-gray-700">Šta je NBS IPS QR kod?</h3>
+                            <p class="mb-3">
+                                NBS IPS (Instant Payment System) je sistem za trenutna plaćanja u Srbiji koji omogućava brza 
+                                i sigurna plaćanja između banaka. QR kod sadrži sve potrebne informacije za plaćanje u 
+                                standardizovanom formatu koji prepoznaju sve banke u Srbiji.
+                            </p>
+                        </div>
+
+                        <!-- Step by step -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-3 text-gray-700">Kako koristiti aplikaciju?</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-start">
+                                    <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-1">1</span>
+                                    <div>
+                                        <strong>Podešavanja:</strong> Unesite svoje podatke (ime, broj računa, adresu) jednom u tab "Podešavanja". 
+                                        Ovi podaci se čuvaju u vašem browseru i koristiće se za buduće QR kodove.
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-1">2</span>
+                                    <div>
+                                        <strong>Generator:</strong> U tabu "Generator" unesite iznos i svrhu plaćanja, 
+                                        zatim kliknite "Generiši QR kod" da napravite QR kod spreman za plaćanje.
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-1">3</span>
+                                    <div>
+                                        <strong>Deljenje:</strong> Koristite dugmad "Preuzmi QR kod" ili "Podeli QR kod" 
+                                        da sačuvate ili podelite QR kod sa osobom koja treba da plati.
+                                    </div>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-1">4</span>
+                                    <div>
+                                        <strong>Plaćanje:</strong> Osoba koja plaća skenira QR kod u svojoj banking aplikaciji 
+                                        i potvrđuje plaćanje. Novac stiže trenutno na vaš račun.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical details -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-3 text-gray-700">Tehnički detalji</h3>
+                            <div class="space-y-2 text-sm">
+                                <p><strong>Format QR koda:</strong> Aplikacija generiše QR kodove prema zvaničnoj NBS specifikaciji za IPS plaćanja.</p>
+                                <p><strong>Lokalno čuvanje:</strong> Podešavanja se čuvaju pomoću browser localStorage API-ja na vašem uređaju.</p>
+                                <p><strong>PWA podrška:</strong> Aplikacija radi kao Progressive Web App - možete je "instalirati" na telefon za lakše korišćenje.</p>
+                                <p><strong>Offline rad:</strong> Nakon prvog učitavanja, aplikacija radi i bez internet konekcije.</p>
+                            </div>
+                        </div>
+
+                        <!-- Support -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-3 text-gray-700">Podrška</h3>
+                            <p>
+                                Aplikacija je besplatna i otvorenog koda. Ako imate problema ili predloge za poboljšanje, 
+                                možete kontaktirati autora ili koristiti tab "Donirajte" za podršku razvoja.
+                            </p>
+                        </div>
+
+                        <!-- Compatibility -->
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h3 class="text-lg font-semibold mb-2 text-blue-800">Kompatibilnost</h3>
+                            <p class="text-blue-700 text-sm">
+                                QR kodovi generisani ovom aplikacijom rade sa svim banking aplikacijama u Srbiji koje podržavaju 
+                                NBS IPS plaćanja, uključujući aplikacije svih većih banaka.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 border-t border-gray-200 py-4 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm text-gray-600">
+                Vibe-coded by chule / 
+                <a href="https://mustrabecka.com/vibe-coding-story/" 
+                   target="_blank" 
+                   rel="noopener noreferrer" 
+                   class="text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+                    mustrabecka.com
+                </a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50 opacity-0">
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        // Tab functionality
+        const tabGenerator = document.getElementById('tab-generator');
+        const tabSettings = document.getElementById('tab-settings');
+        const tabDonate = document.getElementById('tab-donate');
+        const tabHelp = document.getElementById('tab-help');
+        const generatorTab = document.getElementById('generator-tab');
+        const settingsTab = document.getElementById('settings-tab');
+        const donateTab = document.getElementById('donate-tab');
+        const helpTab = document.getElementById('help-tab');
+
+        function switchTab(activeTab, activeContent, tabs, contents) {
+            // Remove active styles from all tabs
+            tabs.forEach(tab => {
+                tab.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                tab.classList.add('text-gray-500');
+            });
+            
+            // Hide all content
+            contents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Activate selected tab
+            activeTab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            activeTab.classList.remove('text-gray-500');
+            activeContent.classList.remove('hidden');
+        }
+
+        const allTabs = [tabGenerator, tabSettings, tabDonate, tabHelp];
+        const allContents = [generatorTab, settingsTab, donateTab, helpTab];
+
+        tabGenerator.addEventListener('click', () => {
+            switchTab(tabGenerator, generatorTab, allTabs, allContents);
+        });
+
+        tabSettings.addEventListener('click', () => {
+            switchTab(tabSettings, settingsTab, allTabs, allContents);
+        });
+
+        tabDonate.addEventListener('click', () => {
+            switchTab(tabDonate, donateTab, allTabs, allContents);
+            generateDonationQR();
+        });
+
+        tabHelp.addEventListener('click', () => {
+            switchTab(tabHelp, helpTab, allTabs, allContents);
+        });
+
+        // Local Storage functions
+        function saveSettings(settings) {
+            localStorage.setItem('ips-qr-settings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            const settings = localStorage.getItem('ips-qr-settings');
+            return settings ? JSON.parse(settings) : null;
+        }
+
+        function clearSettings() {
+            localStorage.removeItem('ips-qr-settings');
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-50 text-white ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            
+            // Show toast
+            toast.classList.remove('translate-x-full', 'opacity-0');
+            toast.classList.add('translate-x-0', 'opacity-100');
+            
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0', 'opacity-100');
+                toast.classList.add('translate-x-full', 'opacity-0');
+            }, 3000);
+        }
+
+        // Check if QR libraries are loaded
+        function waitForQRLibraries(callback, timeout = 5000) {
+            const startTime = Date.now();
+            const checkInterval = setInterval(() => {
+                if (typeof QRCode !== 'undefined' || typeof qrcode !== 'undefined') {
+                    clearInterval(checkInterval);
+                    callback(true);
+                } else if (Date.now() - startTime > timeout) {
+                    clearInterval(checkInterval);
+                    callback(false);
+                }
+            }, 100);
+        }
+
+        // PWA Install functionality
+        let deferredPrompt;
+        let installButton;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Show install button
+            showInstallButton();
+        });
+
+        function showInstallButton() {
+            if (!installButton) {
+                installButton = document.createElement('button');
+                installButton.innerHTML = '📱 Instaliraj aplikaciju';
+                installButton.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-colors text-sm font-medium z-50';
+                installButton.addEventListener('click', installApp);
+                document.body.appendChild(installButton);
+            }
+        }
+
+        async function installApp() {
+            if (deferredPrompt) {
+                // Show the install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                // Clear the deferredPrompt variable
+                deferredPrompt = null;
+                // Hide install button
+                if (installButton) {
+                    installButton.style.display = 'none';
+                }
+            }
+        }
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // Load settings on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const settings = loadSettings();
+            if (settings) {
+                document.getElementById('recipient-name').value = settings.recipientName || '';
+                document.getElementById('recipient-account').value = settings.recipientAccount || '';
+                document.getElementById('payment-code').value = settings.paymentCode || '';
+                document.getElementById('address').value = settings.address || '';
+                document.getElementById('city').value = settings.city || '';
+            }
+            
+            // Check QR libraries loading
+            waitForQRLibraries((loaded) => {
+                if (loaded) {
+                    console.log('QR libraries are ready');
+                    if (typeof QRCode !== 'undefined') console.log('Primary QRCode library available');
+                    if (typeof qrcode !== 'undefined') console.log('Fallback qrcode-generator library available');
+                } else {
+                    console.warn('QR libraries failed to load within timeout');
+                }
+            });
+        });
+
+        // Settings form submission
+        document.getElementById('settings-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const settings = {
+                recipientName: document.getElementById('recipient-name').value,
+                recipientAccount: document.getElementById('recipient-account').value,
+                paymentCode: document.getElementById('payment-code').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value
+            };
+            
+            saveSettings(settings);
+            showToast('Podešavanja su uspešno sačuvana!');
+        });
+
+        // Clear settings
+        document.getElementById('clear-settings').addEventListener('click', () => {
+            clearSettings();
+            document.getElementById('settings-form').reset();
+            showToast('Podešavanja su obrisana!');
+        });
+
+        // Generate NBS IPS QR code data
+        function generateIPSQRData(paymentData, settings) {
+            // Official NBS IPS QR code format
+            // Example: K:PR|V:01|C:1|R:265110031000036133|N:GRAWE osiguranje a.d.o. BEOGRAD|I:RSD4028,00|SF:160|S:Uplata premije osiguranja|RO:11700594
+            
+            const formatAmount = (amount) => {
+                if (!amount) return 'RSD0,00';
+                // Convert amount to Serbian format (comma as decimal separator)
+                let formattedAmount = parseFloat(amount).toFixed(2).replace('.', ',');
+                return 'RSD' + formattedAmount;
+            };
+
+            const formatAccount = (account) => {
+                if (!account) return '';
+                // Remove all dashes and spaces to get clean account number
+                return account.replace(/[-\s]/g, '');
+            };
+
+            const convertSerbianToLatin = (text) => {
+                if (!text) return '';
+                return text
+                    .replace(/Ć/g, 'C')
+                    .replace(/ć/g, 'c')
+                    .replace(/Č/g, 'C')
+                    .replace(/č/g, 'c')
+                    .replace(/Š/g, 'S')
+                    .replace(/š/g, 's')
+                    .replace(/Ž/g, 'Z')
+                    .replace(/ž/g, 'z')
+                    .replace(/Đ/g, 'D')
+                    .replace(/đ/g, 'd');
+            };
+
+            // Build QR string according to NBS standard
+            const qrFields = [
+                'K:PR',  // Transaction type (always PR for payment)
+                'V:01',  // Version (always 01)
+                'C:1',   // Currency code (1 = RSD)
+                `R:${formatAccount(settings.recipientAccount || '')}`,  // Recipient account (no dashes)
+                `N:${convertSerbianToLatin(settings.recipientName || '')}`,  // Recipient name (convert to latin)
+                `I:${formatAmount(paymentData.amount)}`,  // Amount with RSD prefix and comma
+                `SF:${settings.paymentCode || '289'}`,  // Payment code (šifra plaćanja)
+                `S:${convertSerbianToLatin(paymentData.purpose || '')}`  // Purpose (convert to latin)
+            ];
+
+            return qrFields.join('|');
+        }
+
+        // Generate QR code with text labels
+        async function generateQRCode(data) {
+            const qrContainer = document.getElementById('qr-container');
+            const qrActions = document.getElementById('qr-actions');
+            
+            try {
+                qrContainer.innerHTML = '';
+                
+                // Create container for QR code and labels
+                const qrWrapper = document.createElement('div');
+                qrWrapper.className = 'flex flex-col items-center bg-white p-4 rounded-lg';
+                
+                const canvas = document.createElement('canvas');
+                
+                // Try primary QRCode library first
+                if (typeof QRCode !== 'undefined') {
+                    await QRCode.toCanvas(canvas, data, {
+                        width: 300,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#FFFFFF'
+                        }
+                    });
+                } else if (typeof qrcode !== 'undefined') {
+                    // Fallback to qrcode-generator library
+                    const qr = qrcode(0, 'M');
+                    qr.addData(data);
+                    qr.make();
+                    
+                    // Draw QR code on canvas
+                    const ctx = canvas.getContext('2d');
+                    const moduleCount = qr.getModuleCount();
+                    const cellSize = 300 / moduleCount;
+                    
+                    canvas.width = 300;
+                    canvas.height = 300;
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, 300, 300);
+                    
+                    ctx.fillStyle = '#000000';
+                    for (let r = 0; r < moduleCount; r++) {
+                        for (let c = 0; c < moduleCount; c++) {
+                            if (qr.isDark(r, c)) {
+                                ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                            }
+                        }
+                    }
+                } else {
+                    throw new Error('No QR code library is available');
+                }
+                
+                // Add QR code to wrapper
+                qrWrapper.appendChild(canvas);
+                
+                // Get payment data from current form
+                const settings = loadSettings();
+                const paymentData = {
+                    amount: document.getElementById('amount').value,
+                    purpose: document.getElementById('purpose').value
+                };
+                
+                // Create labels below QR code
+                const labelsDiv = document.createElement('div');
+                labelsDiv.className = 'mt-4 text-center space-y-1';
+                
+                // NBS IPS label
+                const nbsLabel = document.createElement('div');
+                nbsLabel.className = 'text-sm font-bold text-gray-800';
+                nbsLabel.textContent = 'NBS IPS';
+                labelsDiv.appendChild(nbsLabel);
+                
+                // Recipient name
+                if (settings && settings.recipientName) {
+                    const nameLabel = document.createElement('div');
+                    nameLabel.className = 'text-sm font-medium text-gray-700';
+                    nameLabel.textContent = settings.recipientName;
+                    labelsDiv.appendChild(nameLabel);
+                }
+                
+                // Amount
+                if (paymentData.amount) {
+                    const amountLabel = document.createElement('div');
+                    amountLabel.className = 'text-lg font-bold text-blue-600';
+                    const formattedAmount = parseFloat(paymentData.amount).toFixed(2).replace('.', ',');
+                    amountLabel.textContent = `${formattedAmount} RSD`;
+                    labelsDiv.appendChild(amountLabel);
+                }
+                
+                qrWrapper.appendChild(labelsDiv);
+                qrContainer.appendChild(qrWrapper);
+                qrActions.classList.remove('hidden');
+                
+                // Store the entire wrapper for download/share
+                window.currentQRCanvas = canvas;
+                window.currentQRWrapper = qrWrapper;
+                
+            } catch (error) {
+                console.error('QR generation error:', error);
+                
+                // Fallback: show QR data as text and link to online generator
+                qrContainer.innerHTML = `
+                    <div class="text-center">
+                        <p class="text-red-500 mb-4">Greška pri generisanju QR koda</p>
+                        <div class="bg-gray-200 p-4 rounded text-sm break-all mb-4">
+                            <strong>QR podaci:</strong><br>
+                            ${data}
+                        </div>
+                        <p class="text-xs text-gray-600">Kopirajte podatke i generišite QR kod na<br>
+                        <a href="https://ips.nbs.rs/sr_lat/qr-validacija-generisanje/generator-nbs-ips-qr-koda" 
+                           target="_blank" class="text-blue-600 underline">zvaničnom NBS generatoru</a></p>
+                    </div>
+                `;
+            }
+        }
+
+        // Payment form submission
+        document.getElementById('payment-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const settings = loadSettings();
+            if (!settings || !settings.recipientName || !settings.recipientAccount || !settings.paymentCode) {
+                showToast('Molimo unesite podešavanja primaoca plaćanja!', 'error');
+                return;
+            }
+            
+            const paymentData = {
+                amount: document.getElementById('amount').value,
+                purpose: document.getElementById('purpose').value
+            };
+            
+            const qrData = generateIPSQRData(paymentData, settings);
+            console.log('Generated QR data:', qrData);
+            generateQRCode(qrData);
+        });
+
+        // Download QR code with labels
+        document.getElementById('download-btn').addEventListener('click', async () => {
+            if (window.currentQRWrapper) {
+                try {
+                    // Use html2canvas to capture the entire QR wrapper with labels
+                    const html2canvas = await import('https://cdn.skypack.dev/html2canvas');
+                    const canvas = await html2canvas.default(window.currentQRWrapper, {
+                        backgroundColor: '#ffffff',
+                        scale: 2
+                    });
+                    
+                    const link = document.createElement('a');
+                    link.download = 'nbs-ips-qr-code.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    showToast('QR kod je preuzet!');
+                } catch (error) {
+                    // Fallback to canvas only
+                    if (window.currentQRCanvas) {
+                        const link = document.createElement('a');
+                        link.download = 'nbs-ips-qr-code.png';
+                        link.href = window.currentQRCanvas.toDataURL();
+                        link.click();
+                        showToast('QR kod je preuzet!');
+                    }
+                }
+            }
+        });
+
+        // Share QR code with labels
+        document.getElementById('share-btn').addEventListener('click', async () => {
+            if (window.currentQRWrapper && navigator.share) {
+                try {
+                    // Use html2canvas to capture the entire QR wrapper
+                    const html2canvas = await import('https://cdn.skypack.dev/html2canvas');
+                    const canvas = await html2canvas.default(window.currentQRWrapper, {
+                        backgroundColor: '#ffffff',
+                        scale: 2
+                    });
+                    
+                    canvas.toBlob(async (blob) => {
+                        const file = new File([blob], 'nbs-ips-qr-code.png', { type: 'image/png' });
+                        await navigator.share({
+                            title: 'NBS IPS QR kod',
+                            text: 'QR kod za plaćanje preko NBS IPS sistema',
+                            files: [file]
+                        });
+                        showToast('QR kod je podeljen!');
+                    });
+                } catch (error) {
+                    // Fallback to canvas only sharing
+                    if (window.currentQRCanvas && navigator.share) {
+                        window.currentQRCanvas.toBlob(async (blob) => {
+                            const file = new File([blob], 'nbs-ips-qr-code.png', { type: 'image/png' });
+                            await navigator.share({
+                                title: 'NBS IPS QR kod',
+                                text: 'QR kod za plaćanje preko NBS IPS sistema',
+                                files: [file]
+                            });
+                            showToast('QR kod je podeljen!');
+                        });
+                    } else {
+                        // Final fallback: download
+                        document.getElementById('download-btn').click();
+                        showToast('QR kod je preuzet (deljenje nije podržano)');
+                    }
+                }
+            } else {
+                // Fallback: download
+                document.getElementById('download-btn').click();
+                showToast('QR kod je preuzet (deljenje nije podržano)');
+            }
+        });
+
+        // Generate donation QR code
+        function generateDonationQR() {
+            const donationQR = document.getElementById('donation-qr');
+            
+            // Check if QR code is already generated
+            if (donationQR.querySelector('canvas')) {
+                return;
+            }
+            
+            // Donation details - you'll need to update with actual account number
+            const donationData = {
+                recipientName: 'Milos Cukovic',
+                recipientAccount: '160550010016616078', // This needs to be provided
+                paymentCode: '289',
+                amount: '50.00',
+                purpose: 'Donacija'
+            };
+            
+            const qrData = generateIPSQRData(donationData, donationData);
+            
+            waitForQRLibraries((loaded) => {
+                if (loaded) {
+                    generateDonationQRCode(qrData);
+                } else {
+                    donationQR.innerHTML = `
+                        <div class="text-center p-4">
+                            <p class="text-red-500 mb-2">Greška pri generisanju QR koda</p>
+                            <p class="text-xs text-gray-600">Molimo pokušajte ponovo</p>
+                        </div>
+                    `;
+                }
+            });
+        }
+        
+        // Generate donation QR code display
+        async function generateDonationQRCode(data) {
+            const donationQR = document.getElementById('donation-qr');
+            
+            try {
+                donationQR.innerHTML = '';
+                
+                // Create container for QR code and labels
+                const qrWrapper = document.createElement('div');
+                qrWrapper.className = 'flex flex-col items-center bg-white p-4 rounded-lg';
+                
+                const canvas = document.createElement('canvas');
+                
+                // Try primary QRCode library first
+                if (typeof QRCode !== 'undefined') {
+                    await QRCode.toCanvas(canvas, data, {
+                        width: 200,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#FFFFFF'
+                        }
+                    });
+                } else if (typeof qrcode !== 'undefined') {
+                    // Fallback to qrcode-generator library
+                    const qr = qrcode(0, 'M');
+                    qr.addData(data);
+                    qr.make();
+                    
+                    // Draw QR code on canvas
+                    const ctx = canvas.getContext('2d');
+                    const moduleCount = qr.getModuleCount();
+                    const cellSize = 200 / moduleCount;
+                    
+                    canvas.width = 200;
+                    canvas.height = 200;
+                    
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, 200, 200);
+                    
+                    ctx.fillStyle = '#000000';
+                    for (let r = 0; r < moduleCount; r++) {
+                        for (let c = 0; c < moduleCount; c++) {
+                            if (qr.isDark(r, c)) {
+                                ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                            }
+                        }
+                    }
+                } else {
+                    throw new Error('No QR code library is available');
+                }
+                
+                // Add QR code to wrapper
+                qrWrapper.appendChild(canvas);
+                
+                // Create labels below QR code
+                const labelsDiv = document.createElement('div');
+                labelsDiv.className = 'mt-3 text-center space-y-1';
+                
+                // NBS IPS label
+                const nbsLabel = document.createElement('div');
+                nbsLabel.className = 'text-sm font-bold text-gray-800';
+                nbsLabel.textContent = 'NBS IPS';
+                labelsDiv.appendChild(nbsLabel);
+                
+                // Recipient name
+                const nameLabel = document.createElement('div');
+                nameLabel.className = 'text-sm font-medium text-gray-700';
+                nameLabel.textContent = 'Miloš Ćuković';
+                labelsDiv.appendChild(nameLabel);
+                
+                // Amount
+                const amountLabel = document.createElement('div');
+                amountLabel.className = 'text-lg font-bold text-green-600';
+                amountLabel.textContent = '50,00 RSD';
+                labelsDiv.appendChild(amountLabel);
+                
+                qrWrapper.appendChild(labelsDiv);
+                donationQR.appendChild(qrWrapper);
+                
+            } catch (error) {
+                console.error('Donation QR generation error:', error);
+                
+                donationQR.innerHTML = `
+                    <div class="text-center p-4">
+                        <p class="text-red-500 mb-2">Greška pri generisanju QR koda</p>
+                        <div class="bg-gray-200 p-3 rounded text-xs break-all mb-3">
+                            <strong>QR podaci:</strong><br>
+                            ${data}
+                        </div>
+                        <p class="text-xs text-gray-600">
+                            <strong>Napomena:</strong> Potrebno je uneti broj računa u kodu.<br>
+                            Kontaktirajte autora za ispravku.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
